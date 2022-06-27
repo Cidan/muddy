@@ -1,0 +1,11 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/Cidan/muddy/gen/proto/go
+
+plugins:
+  - name: go
+    out: gen/proto/go
+    opt:
+      - paths=source_relative

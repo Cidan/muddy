@@ -1,0 +1,10 @@
+version: v1
+name: github.com/Cidan/muddy
+deps:
+  - buf.build/googleapis/googleapis
+lint:
+  use:
+    - DEFAULT
+breaking:
+  use:
+    - FILE
