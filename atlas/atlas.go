@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	playerv1 "github.com/Cidan/muddy/gen/proto/go/muddy/v1"
+	pb "github.com/Cidan/muddy/gen/proto/go/muddy/v1"
 	"github.com/rs/zerolog/log"
 )
 
@@ -24,7 +24,7 @@ func Get() *Atlas {
 type Atlas struct{}
 
 func (a *Atlas) Serve(ctx context.Context) error {
-	p := &playerv1.Player{}
+	p := &pb.Player{}
 	_ = p
 	log.Info().Msg("Starting Atlas")
 	// TODO(lobato): Do something real with atlas here.

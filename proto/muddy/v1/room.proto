@@ -1,6 +1,6 @@
 syntax = "proto3";
 package muddy.v1;
 
-message Player {
-
+message Room {
+  
 }
