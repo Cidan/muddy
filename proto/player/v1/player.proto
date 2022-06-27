@@ -1,5 +1,5 @@
 syntax = "proto3";
-package muddy.v1;
+package muddy.player.v1;
 
 message Player {
 
