@@ -80,12 +80,12 @@ func (p *Player) HandlePlayerUpdate(ctx context.Context, u *playerv1.Update) {
 	case playerv1.Update_UPDATE_TYPE_NAME:
 		p.data.Name = u.GetName()
 	case playerv1.Update_UPDATE_TYPE_HMV:
-		p.data.Health += u.Health
-		p.data.MaxHealth += u.MaxHealth
-		p.data.Mana += u.Mana
-		p.data.MaxMana += u.MaxMana
-		p.data.Move += u.Move
-		p.data.MaxMove += u.MaxMove
+		p.data.Health += u.GetHealth()
+		p.data.MaxHealth += u.GetMaxHealth()
+		p.data.Mana += u.GetMana()
+		p.data.MaxMana += u.GetMaxMana()
+		p.data.Move += u.GetMove()
+		p.data.MaxMove += u.GetMaxMove()
 	}
 }
 
