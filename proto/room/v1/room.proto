@@ -1,5 +1,5 @@
 syntax = "proto3";
-package muddy.room.v1;
+package room.v1;
 
 message Room {
   

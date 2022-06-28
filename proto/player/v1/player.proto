@@ -1,6 +1,23 @@
 syntax = "proto3";
-package muddy.player.v1;
+package player.v1;
 
+// Player is a human player construct. Temporary state should not be stored
+// in this proto.
 message Player {
+  // UUID is this player's unique ID.
+  string uuid = 1;
 
+  // Name is the name of this player, and is visible to other players.
+  string name = 2;
+}
+
+message Output {
+  enum OutputType {
+    OUTPUT_TYPE_UNSPECIFIED = 0;
+    OUTPUT_TYPE_BUFFER = 1;
+    OUTPUT_TYPE_DIRECT = 2;
+    OUTPUT_TYPE_FLUSH = 3;
+  }
+  OutputType type = 1;
+  string text = 2;
 }
