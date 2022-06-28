@@ -13,6 +13,7 @@ type Player struct {
 	connection net.Conn
 	input      chan string //*bufio.Reader
 	output     chan *playerv1.Output
+	config     chan net.Conn
 	Data       *playerv1.Player
 	textBuffer string
 }
@@ -27,6 +28,9 @@ func NewPlayer() *Player {
 func (p *Player) Serve(ctx context.Context) error {
 	for {
 		select {
+		// Set the player connection
+		case c := <-p.config:
+			p.connection = c
 		// Process output to the player.
 		case output := <-p.output:
 			switch output.Type {
