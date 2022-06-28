@@ -127,20 +127,50 @@ func (p *Player) Flush() {
 // Health changes the player's health by the given amounts.
 // Current will change the player's current health (i.e. take damage, heal)
 // whereas max will change the player's max health permanently.
-func (p *Player) Health(current, max int) {
-
+func (p *Player) Health(current, max int32) {
+	p.update <- &playerv1.Update{
+		Health:    current,
+		MaxHealth: max,
+	}
 }
 
 // Mana changes the player's mana by the given amounts.
 // Current will change the player's current mana
 // whereas max will change the player's max mana permanently.
-func (p *Player) Mana(current, max int) {
-
+func (p *Player) Mana(current, max int32) {
+	p.update <- &playerv1.Update{
+		Mana:    current,
+		MaxMana: max,
+	}
 }
 
 // Move changes the player's move by the given amounts.
 // Current will change the player's current move
 // whereas max will change the player's max move permanently.
-func (p *Player) Move(current, max int) {
+func (p *Player) Move(current, max int32) {
+	p.update <- &playerv1.Update{
+		Move:    current,
+		MaxMove: max,
+	}
+}
 
+// GetHealth returns the player's current and maximum health.
+func (p *Player) GetHealth() (int32, int32) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	return p.data.Health, p.data.MaxHealth
+}
+
+// GetMana returns the player's current and maximum mana.
+func (p *Player) GetMana() (int32, int32) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	return p.data.Mana, p.data.MaxMana
+}
+
+// GetMove returns the player's current and maximum move.
+func (p *Player) GetMove() (int32, int32) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	return p.data.Move, p.data.MaxMove
 }
