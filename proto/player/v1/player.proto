@@ -21,3 +21,13 @@ message Output {
   OutputType type = 1;
   string text = 2;
 }
+
+message Update {
+  enum UpdateType {
+    UPDATE_TYPE_UNSPECIFIED = 0;
+    UPDATE_TYPE_NAME = 1;
+  }
+  oneof update {
+    string name = 1;
+  }
+}
