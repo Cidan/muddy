@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync"
 
 	playerv1 "github.com/Cidan/muddy/gen/proto/go/player/v1"
 	"github.com/rs/zerolog/log"
@@ -16,7 +17,9 @@ type Player struct {
 	input      chan string //*bufio.Reader
 	output     chan *playerv1.Output
 	config     chan net.Conn
-	Data       *playerv1.Player
+	update     chan *playerv1.Update
+	data       *playerv1.Player
+	lock       sync.RWMutex
 	textBuffer string
 }
 
@@ -24,7 +27,12 @@ type Player struct {
 func NewPlayer() *Player {
 	return &Player{
 		supervisor: suture.NewSimple("player"),
-		Data:       &playerv1.Player{},
+		input:      make(chan string),
+		output:     make(chan *playerv1.Output),
+		config:     make(chan net.Conn),
+		update:     make(chan *playerv1.Update),
+		lock:       sync.RWMutex{},
+		data:       &playerv1.Player{},
 	}
 }
 
@@ -34,6 +42,8 @@ func (p *Player) Serve(ctx context.Context) error {
 	log.Info().Msg("Starting Player")
 	for {
 		select {
+		case u := <-p.update:
+			p.HandlePlayerUpdate(ctx, u)
 		// Set the player connection
 		case c := <-p.config:
 			p.connection = c
@@ -59,6 +69,23 @@ func (p *Player) Serve(ctx context.Context) error {
 			return suture.ErrDoNotRestart
 			// TODO(lobato): break here
 		}
+	}
+}
+
+// HandlePlayerUpdate handles an update call to this player
+func (p *Player) HandlePlayerUpdate(ctx context.Context, u *playerv1.Update) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	switch u.Type {
+	case playerv1.Update_UPDATE_TYPE_NAME:
+		p.data.Name = u.GetName()
+	case playerv1.Update_UPDATE_TYPE_HMV:
+		p.data.Health += u.Health
+		p.data.MaxHealth += u.MaxHealth
+		p.data.Mana += u.Mana
+		p.data.MaxMana += u.MaxMana
+		p.data.Move += u.Move
+		p.data.MaxMove += u.MaxMove
 	}
 }
 
@@ -95,4 +122,25 @@ func (p *Player) Flush() {
 	p.output <- &playerv1.Output{
 		Type: playerv1.Output_OUTPUT_TYPE_FLUSH,
 	}
+}
+
+// Health changes the player's health by the given amounts.
+// Current will change the player's current health (i.e. take damage, heal)
+// whereas max will change the player's max health permanently.
+func (p *Player) Health(current, max int) {
+
+}
+
+// Mana changes the player's mana by the given amounts.
+// Current will change the player's current mana
+// whereas max will change the player's max mana permanently.
+func (p *Player) Mana(current, max int) {
+
+}
+
+// Move changes the player's move by the given amounts.
+// Current will change the player's current move
+// whereas max will change the player's max move permanently.
+func (p *Player) Move(current, max int) {
+
 }

@@ -9,6 +9,24 @@ message Player {
 
   // Name is the name of this player, and is visible to other players.
   string name = 2;
+
+  // Health is the player's current health.
+  int32 health = 3;
+
+  // Max_health is the player's max health.
+  int32 max_health = 4;
+
+  // Mana is the player's current mana.
+  int32 mana = 5;
+
+  // Max_mana is the player's max mana.
+  int32 max_mana = 6;
+  
+  // Move is the player's current move.
+  int32 move = 7;
+  
+  // Max_move is the player's max move.
+  int32 max_move = 8;
 }
 
 message Output {
@@ -22,12 +40,24 @@ message Output {
   string text = 2;
 }
 
+message UpdateName {
+  string name = 1;
+}
+
 message Update {
   enum UpdateType {
     UPDATE_TYPE_UNSPECIFIED = 0;
     UPDATE_TYPE_NAME = 1;
+    UPDATE_TYPE_HMV = 2;
   }
-  oneof update {
-    string name = 1;
-  }
+
+  UpdateType type = 1;
+  string name = 2;
+  int32 health = 3;
+  int32 max_health = 4;
+  int32 mana = 5;
+  int32 max_mana = 6;
+  int32 move = 7;
+  int32 max_move = 8;
+
 }
