@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 
-	"github.com/Cidan/muddy/construct"
 	"github.com/Cidan/muddy/server"
 	"github.com/thejerf/suture/v4"
 )
@@ -14,7 +13,8 @@ func main() {
 	})
 
 	sup.Add(server.Get())
-	sup.Add(construct.NewPlayer())
+	sup.Add(server.Get().Supervisor())
+
 	if err := sup.Serve(context.Background()); err != nil {
 		panic(err)
 	}

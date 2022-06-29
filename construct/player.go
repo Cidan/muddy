@@ -13,7 +13,6 @@ import (
 
 type Player struct {
 	connection net.Conn
-	supervisor *suture.Supervisor
 	input      chan string //*bufio.Reader
 	output     chan *playerv1.Output
 	config     chan net.Conn
@@ -26,13 +25,12 @@ type Player struct {
 // NewPlayer creates a new player object
 func NewPlayer() *Player {
 	return &Player{
-		supervisor: suture.NewSimple("player"),
-		input:      make(chan string),
-		output:     make(chan *playerv1.Output),
-		config:     make(chan net.Conn),
-		update:     make(chan *playerv1.Update),
-		lock:       sync.RWMutex{},
-		data:       &playerv1.Player{},
+		input:  make(chan string),
+		output: make(chan *playerv1.Output),
+		config: make(chan net.Conn),
+		update: make(chan *playerv1.Update),
+		lock:   sync.RWMutex{},
+		data:   &playerv1.Player{},
 	}
 }
 
@@ -43,16 +41,20 @@ func (p *Player) Serve(ctx context.Context) error {
 	for {
 		select {
 		case u := <-p.update:
-			p.HandlePlayerUpdate(ctx, u)
+			log.Debug().Msg("updating player")
+			p.handlePlayerUpdate(ctx, u)
 		// Set the player connection
 		case c := <-p.config:
+			log.Debug().Msg("setting connection on player")
 			p.connection = c
 		// Process output to the player.
 		case output := <-p.output:
 			switch output.Type {
 			// Direct output of text to the player.
 			case playerv1.Output_OUTPUT_TYPE_DIRECT:
-				p.write(output.GetText())
+				if err := p.write(output.GetText()); err != nil {
+					log.Error().Msg("error sending to user")
+				}
 				// Buffered write, does not actually write.
 			case playerv1.Output_OUTPUT_TYPE_BUFFER:
 				p.textBuffer += output.GetText()
@@ -73,7 +75,7 @@ func (p *Player) Serve(ctx context.Context) error {
 }
 
 // HandlePlayerUpdate handles an update call to this player
-func (p *Player) HandlePlayerUpdate(ctx context.Context, u *playerv1.Update) {
+func (p *Player) handlePlayerUpdate(ctx context.Context, u *playerv1.Update) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	switch u.Type {
@@ -89,12 +91,16 @@ func (p *Player) HandlePlayerUpdate(ctx context.Context, u *playerv1.Update) {
 	}
 }
 
-func (p *Player) write(text string, args ...interface{}) {
+func (p *Player) write(text string) error {
 	// TODO(lobato): color and prompt
 	if p.connection != nil {
 		// TODO(lobato): catch error
-		fmt.Fprintf(p.connection, "%s\r\xff\xf9", args...)
+		_, err := fmt.Fprintf(p.connection, "%s\r\xff\xf9", text)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func (p *Player) writeRaw(text string, args ...interface{}) {
@@ -122,6 +128,10 @@ func (p *Player) Flush() {
 	p.output <- &playerv1.Output{
 		Type: playerv1.Output_OUTPUT_TYPE_FLUSH,
 	}
+}
+
+func (p *Player) SetConnection(c net.Conn) {
+	p.config <- c
 }
 
 // Health changes the player's health by the given amounts.
