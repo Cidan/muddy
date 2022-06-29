@@ -134,13 +134,7 @@ func (p *Player) writeRaw(text string, args ...interface{}) {
 	}
 }
 
-func (p *Player) Buffer(text string, args ...interface{}) {
-	p.output <- &playerv1.Output{
-		Type: playerv1.Output_OUTPUT_TYPE_BUFFER,
-		Text: fmt.Sprintf(text, args...),
-	}
-}
-
+// Send will send the given text to the player.
 func (p *Player) Send(text string, args ...interface{}) {
 	p.output <- &playerv1.Output{
 		Type: playerv1.Output_OUTPUT_TYPE_DIRECT,
@@ -148,12 +142,25 @@ func (p *Player) Send(text string, args ...interface{}) {
 	}
 }
 
+// Buffer will buffer the given text for a player, and send
+// that text upon calling Flush(). Multiple calls to this will
+// append new text to the buffer.
+func (p *Player) Buffer(text string, args ...interface{}) {
+	p.output <- &playerv1.Output{
+		Type: playerv1.Output_OUTPUT_TYPE_BUFFER,
+		Text: fmt.Sprintf(text, args...),
+	}
+}
+
+// Flush will send the buffered text that was called from Buffer()
+// to the player. The buffer will be cleared after the text has been sent.
 func (p *Player) Flush() {
 	p.output <- &playerv1.Output{
 		Type: playerv1.Output_OUTPUT_TYPE_FLUSH,
 	}
 }
 
+// SetConnection sets the user's connection to the given net.Conn.
 func (p *Player) SetConnection(c net.Conn) {
 	p.config <- c
 }
