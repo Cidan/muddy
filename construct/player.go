@@ -1,10 +1,12 @@
 package construct
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
 	playerv1 "github.com/Cidan/muddy/gen/proto/go/player/v1"
 	"github.com/rs/zerolog/log"
@@ -19,6 +21,7 @@ type Player struct {
 	update     chan *playerv1.Update
 	data       *playerv1.Player
 	lock       sync.RWMutex
+	ticker     *time.Ticker
 	textBuffer string
 }
 
@@ -30,6 +33,7 @@ func NewPlayer() *Player {
 		config: make(chan net.Conn),
 		update: make(chan *playerv1.Update),
 		lock:   sync.RWMutex{},
+		ticker: time.NewTicker(time.Second),
 		data:   &playerv1.Player{},
 	}
 }
@@ -40,6 +44,9 @@ func (p *Player) Serve(ctx context.Context) error {
 	log.Info().Msg("Starting Player")
 	for {
 		select {
+		case <-p.ticker.C:
+			// TODO(lobato): One second ticker here.
+			log.Debug().Msg("tick")
 		case u := <-p.update:
 			log.Debug().Msg("updating player")
 			p.handlePlayerUpdate(ctx, u)
@@ -47,6 +54,20 @@ func (p *Player) Serve(ctx context.Context) error {
 		case c := <-p.config:
 			log.Debug().Msg("setting connection on player")
 			p.connection = c
+			s := bufio.NewScanner(c)
+			// Wrap the connection reader in a channel and launch it
+			// in a goroutine. This goroutine will exit automatically
+			// in the event of the network socket closing.
+			go func(s *bufio.Scanner) {
+				for {
+					if !s.Scan() {
+						break
+					}
+					p.input <- s.Text()
+				}
+				log.Debug().Msg("player bufio scanner exiting")
+			}(s)
+
 		// Process output to the player.
 		case output := <-p.output:
 			switch output.Type {
@@ -64,12 +85,15 @@ func (p *Player) Serve(ctx context.Context) error {
 				p.textBuffer = ""
 			}
 		case input := <-p.input:
+			p.lock.RLock()
+			log.Debug().Str("name", p.data.Name).Str("input", input).Msg("Got input from player")
+			p.lock.RUnlock()
 			// TODO(lobato): process input via interp
 			_ = input
 		case <-ctx.Done():
+			// TODO(lobato): cleanup, server is shutting down.
 			p.connection.Close()
 			return suture.ErrDoNotRestart
-			// TODO(lobato): break here
 		}
 	}
 }
