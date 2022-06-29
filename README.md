@@ -9,3 +9,10 @@ interpreter system.
 
 Much of the code that comprises muddy will come from gomud, with most of the
 low level construct handling being refactored.
+
+
+## Why?
+
+I use this project both to work on a passion of mine, text based games, and
+to further my skills as a developer. This project ends up being where I try
+a lot of different things/expand my software architecture skills as a result.
