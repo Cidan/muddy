@@ -9,6 +9,7 @@ import (
 	"time"
 
 	playerv1 "github.com/Cidan/muddy/gen/proto/go/player/v1"
+	"github.com/Cidan/muddy/interp"
 	"github.com/rs/zerolog/log"
 	"github.com/thejerf/suture/v4"
 )
@@ -53,6 +54,9 @@ func (p *Player) Serve(ctx context.Context) error {
 		// Set the player connection
 		case c := <-p.config:
 			log.Debug().Msg("setting connection on player")
+			if p.connection != nil {
+				p.connection.Close()
+			}
 			p.connection = c
 			s := bufio.NewScanner(c)
 			// Wrap the connection reader in a channel and launch it
@@ -88,11 +92,15 @@ func (p *Player) Serve(ctx context.Context) error {
 			p.lock.RLock()
 			log.Debug().Str("name", p.data.Name).Str("input", input).Msg("Got input from player")
 			p.lock.RUnlock()
-			// TODO(lobato): process input via interp
-			_ = input
+			interp.Get().Do(&interp.Command{
+				Player: p,
+				Text:   input,
+			})
 		case <-ctx.Done():
 			// TODO(lobato): cleanup, server is shutting down.
-			p.connection.Close()
+			if p.connection != nil {
+				p.connection.Close()
+			}
 			return suture.ErrDoNotRestart
 		}
 	}
@@ -165,11 +173,21 @@ func (p *Player) SetConnection(c net.Conn) {
 	p.config <- c
 }
 
+// SetName sets the name of this player.
+func (p *Player) SetName(name string) {
+	// TODO(lobato): validate name
+	p.update <- &playerv1.Update{
+		Type: playerv1.Update_UPDATE_TYPE_NAME,
+		Name: name,
+	}
+}
+
 // Health changes the player's health by the given amounts.
 // Current will change the player's current health (i.e. take damage, heal)
 // whereas max will change the player's max health permanently.
 func (p *Player) Health(current, max int32) {
 	p.update <- &playerv1.Update{
+		Type:      playerv1.Update_UPDATE_TYPE_HMV,
 		Health:    current,
 		MaxHealth: max,
 	}
@@ -180,6 +198,7 @@ func (p *Player) Health(current, max int32) {
 // whereas max will change the player's max mana permanently.
 func (p *Player) Mana(current, max int32) {
 	p.update <- &playerv1.Update{
+		Type:    playerv1.Update_UPDATE_TYPE_HMV,
 		Mana:    current,
 		MaxMana: max,
 	}
@@ -190,6 +209,7 @@ func (p *Player) Mana(current, max int32) {
 // whereas max will change the player's max move permanently.
 func (p *Player) Move(current, max int32) {
 	p.update <- &playerv1.Update{
+		Type:    playerv1.Update_UPDATE_TYPE_HMV,
 		Move:    current,
 		MaxMove: max,
 	}
