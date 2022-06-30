@@ -17,9 +17,6 @@ import (
 type Player struct {
 	connection net.Conn
 	input      chan string //*bufio.Reader
-	output     chan *playerv1.Output
-	config     chan net.Conn
-	update     chan *playerv1.Update
 	data       *playerv1.Player
 	lock       sync.RWMutex
 	ticker     *time.Ticker
@@ -30,9 +27,6 @@ type Player struct {
 func NewPlayer() *Player {
 	return &Player{
 		input:  make(chan string),
-		output: make(chan *playerv1.Output),
-		config: make(chan net.Conn),
-		update: make(chan *playerv1.Update),
 		lock:   sync.RWMutex{},
 		ticker: time.NewTicker(time.Second),
 		data:   &playerv1.Player{},
@@ -48,46 +42,6 @@ func (p *Player) Serve(ctx context.Context) error {
 		case <-p.ticker.C:
 			// TODO(lobato): One second ticker here.
 			log.Debug().Msg("tick")
-		case u := <-p.update:
-			log.Debug().Msg("updating player")
-			p.handlePlayerUpdate(ctx, u)
-		// Set the player connection
-		case c := <-p.config:
-			log.Debug().Msg("setting connection on player")
-			if p.connection != nil {
-				p.connection.Close()
-			}
-			p.connection = c
-			s := bufio.NewScanner(c)
-			// Wrap the connection reader in a channel and launch it
-			// in a goroutine. This goroutine will exit automatically
-			// in the event of the network socket closing.
-			go func(s *bufio.Scanner) {
-				for {
-					if !s.Scan() {
-						break
-					}
-					p.input <- s.Text()
-				}
-				log.Debug().Msg("player bufio scanner exiting")
-			}(s)
-
-		// Process output to the player.
-		case output := <-p.output:
-			switch output.Type {
-			// Direct output of text to the player.
-			case playerv1.Output_OUTPUT_TYPE_DIRECT:
-				if err := p.write(output.GetText()); err != nil {
-					log.Error().Msg("error sending to user")
-				}
-				// Buffered write, does not actually write.
-			case playerv1.Output_OUTPUT_TYPE_BUFFER:
-				p.textBuffer += output.GetText()
-				// Flush the buffered output for this user.
-			case playerv1.Output_OUTPUT_TYPE_FLUSH:
-				p.write(p.textBuffer)
-				p.textBuffer = ""
-			}
 		case input := <-p.input:
 			p.lock.RLock()
 			log.Debug().Str("name", p.data.Name).Str("input", input).Msg("Got input from player")
@@ -103,23 +57,6 @@ func (p *Player) Serve(ctx context.Context) error {
 			}
 			return suture.ErrDoNotRestart
 		}
-	}
-}
-
-// HandlePlayerUpdate handles an update call to this player
-func (p *Player) handlePlayerUpdate(ctx context.Context, u *playerv1.Update) {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-	switch u.Type {
-	case playerv1.Update_UPDATE_TYPE_NAME:
-		p.data.Name = u.GetName()
-	case playerv1.Update_UPDATE_TYPE_HMV:
-		p.data.Health += u.GetHealth()
-		p.data.MaxHealth += u.GetMaxHealth()
-		p.data.Mana += u.GetMana()
-		p.data.MaxMana += u.GetMaxMana()
-		p.data.Move += u.GetMove()
-		p.data.MaxMove += u.GetMaxMove()
 	}
 }
 
@@ -143,76 +80,144 @@ func (p *Player) writeRaw(text string, args ...interface{}) {
 }
 
 // Send will send the given text to the player.
-func (p *Player) Send(text string, args ...interface{}) {
-	p.output <- &playerv1.Output{
-		Type: playerv1.Output_OUTPUT_TYPE_DIRECT,
-		Text: fmt.Sprintf(text, args...),
-	}
+func (p *Player) Send(text string, args ...interface{}) error {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	return p.write(fmt.Sprintf("%s", args...))
 }
 
 // Buffer will buffer the given text for a player, and send
 // that text upon calling Flush(). Multiple calls to this will
 // append new text to the buffer.
 func (p *Player) Buffer(text string, args ...interface{}) {
-	p.output <- &playerv1.Output{
-		Type: playerv1.Output_OUTPUT_TYPE_BUFFER,
-		Text: fmt.Sprintf(text, args...),
-	}
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.textBuffer += fmt.Sprintf("%s", args...)
 }
 
 // Flush will send the buffered text that was called from Buffer()
 // to the player. The buffer will be cleared after the text has been sent.
-func (p *Player) Flush() {
-	p.output <- &playerv1.Output{
-		Type: playerv1.Output_OUTPUT_TYPE_FLUSH,
-	}
+func (p *Player) Flush() error {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	err := p.write(p.textBuffer)
+	p.textBuffer = ""
+	return err
 }
 
 // SetConnection sets the user's connection to the given net.Conn.
 func (p *Player) SetConnection(c net.Conn) {
-	p.config <- c
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	if p.connection != nil {
+		p.connection.Close()
+	}
+	p.connection = c
+	s := bufio.NewScanner(c)
+	// Wrap the connection reader in a channel and launch it
+	// in a goroutine. This goroutine will exit automatically
+	// in the event of the network socket closing.
+	go func(s *bufio.Scanner) {
+		for {
+			if !s.Scan() {
+				break
+			}
+			p.input <- s.Text()
+		}
+		log.Debug().Msg("player bufio scanner exiting")
+	}(s)
 }
 
 // SetName sets the name of this player.
 func (p *Player) SetName(name string) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.data.Name = name
 	// TODO(lobato): validate name
-	p.update <- &playerv1.Update{
-		Type: playerv1.Update_UPDATE_TYPE_NAME,
-		Name: name,
-	}
 }
 
 // Health changes the player's health by the given amounts.
 // Current will change the player's current health (i.e. take damage, heal)
 // whereas max will change the player's max health permanently.
-func (p *Player) Health(current, max int32) {
-	p.update <- &playerv1.Update{
-		Type:      playerv1.Update_UPDATE_TYPE_HMV,
-		Health:    current,
-		MaxHealth: max,
-	}
+func (p *Player) AddHealth(current, max int32) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.data.Health += current
+	p.data.MaxHealth += max
 }
 
 // Mana changes the player's mana by the given amounts.
 // Current will change the player's current mana
 // whereas max will change the player's max mana permanently.
-func (p *Player) Mana(current, max int32) {
-	p.update <- &playerv1.Update{
-		Type:    playerv1.Update_UPDATE_TYPE_HMV,
-		Mana:    current,
-		MaxMana: max,
-	}
+func (p *Player) AddMana(current, max int32) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.data.Mana += current
+	p.data.MaxMana += max
 }
 
 // Move changes the player's move by the given amounts.
 // Current will change the player's current move
 // whereas max will change the player's max move permanently.
-func (p *Player) Move(current, max int32) {
-	p.update <- &playerv1.Update{
-		Type:    playerv1.Update_UPDATE_TYPE_HMV,
-		Move:    current,
-		MaxMove: max,
-	}
+func (p *Player) AddMove(current, max int32) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.data.Move += current
+	p.data.MaxMove += max
+}
+
+// Health changes the player's health by the given amounts.
+// Current will change the player's current health (i.e. take damage, heal)
+// whereas max will change the player's max health permanently.
+func (p *Player) SetHealth(current int32) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.data.Health = current
+}
+
+// Mana changes the player's mana by the given amounts.
+// Current will change the player's current mana
+// whereas max will change the player's max mana permanently.
+func (p *Player) SetMana(current int32) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.data.Mana = current
+}
+
+// Move changes the player's move by the given amounts.
+// Current will change the player's current move
+// whereas max will change the player's max move permanently.
+func (p *Player) SetMove(current int32) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.data.Move = current
+}
+
+// Health changes the player's health by the given amounts.
+// Current will change the player's current health (i.e. take damage, heal)
+// whereas max will change the player's max health permanently.
+func (p *Player) SetMaxHealth(max int32) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.data.MaxHealth = max
+}
+
+// Mana changes the player's mana by the given amounts.
+// Current will change the player's current mana
+// whereas max will change the player's max mana permanently.
+func (p *Player) SetMaxMana(max int32) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.data.MaxMana = max
+}
+
+// Move changes the player's move by the given amounts.
+// Current will change the player's current move
+// whereas max will change the player's max move permanently.
+func (p *Player) SetMaxMove(max int32) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.data.MaxMove = max
 }
 
 // GetHealth returns the player's current and maximum health.
