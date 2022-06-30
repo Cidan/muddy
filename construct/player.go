@@ -49,6 +49,9 @@ func (p *Player) Serve(ctx context.Context) error {
 				Player: p,
 				Text:   input,
 			})
+			// Slow the user down so they can't spam the game.
+			// TODO(lobato): make this adjustable as part of a "haste" mechanism
+			time.Sleep(time.Millisecond * 50)
 		case <-ctx.Done():
 			// TODO(lobato): cleanup, server is shutting down.
 			if p.connection != nil {
