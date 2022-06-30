@@ -26,7 +26,7 @@ type CommandRef struct {
 	fn    commandCallback
 }
 
-type commandCallback func(context.Context, ...string) error
+type commandCallback func(context.Context, Player, ...string) error
 
 type Interp struct {
 	input    chan *Command
@@ -42,7 +42,8 @@ var (
 func Get() *Interp {
 	once.Do(func() {
 		interp = &Interp{
-			input: make(chan *Command),
+			input:    make(chan *Command),
+			commands: make(map[string]*CommandRef),
 		}
 	})
 
@@ -58,7 +59,7 @@ func (i *Interp) Serve(ctx context.Context) error {
 		case c := <-i.input:
 			all := strings.SplitN(c.Text, " ", 2)
 			log.Debug().Strs("input", all).Msg("got command")
-			err := i.Process(ctx, all[0], all[1:]...)
+			err := i.Process(ctx, c.Player, all[0], all[1:]...)
 			switch err {
 			case ErrNoCommand:
 				c.Player.Send("huh?")
@@ -78,9 +79,9 @@ func (i *Interp) Register(c *CommandRef) {
 	i.commands[c.name] = c
 }
 
-func (i *Interp) Process(ctx context.Context, command string, input ...string) error {
+func (i *Interp) Process(ctx context.Context, player Player, command string, input ...string) error {
 	if i.commands[command] != nil {
-		return i.commands[command].fn(ctx, input...)
+		return i.commands[command].fn(ctx, player, input...)
 	}
 	return ErrNoCommand
 }
