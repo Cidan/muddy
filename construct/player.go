@@ -41,7 +41,6 @@ func (p *Player) Serve(ctx context.Context) error {
 		select {
 		case <-p.ticker.C:
 			// TODO(lobato): One second ticker here.
-			log.Debug().Msg("tick")
 		case input := <-p.input:
 			p.lock.RLock()
 			log.Debug().Str("name", p.data.Name).Str("input", input).Msg("Got input from player")
@@ -83,7 +82,7 @@ func (p *Player) writeRaw(text string, args ...interface{}) {
 func (p *Player) Send(text string, args ...interface{}) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	return p.write(fmt.Sprintf("%s", args...))
+	return p.write(fmt.Sprintf(text, args...))
 }
 
 // Buffer will buffer the given text for a player, and send
@@ -92,7 +91,7 @@ func (p *Player) Send(text string, args ...interface{}) error {
 func (p *Player) Buffer(text string, args ...interface{}) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	p.textBuffer += fmt.Sprintf("%s", args...)
+	p.textBuffer += fmt.Sprintf(text, args...)
 }
 
 // Flush will send the buffered text that was called from Buffer()
