@@ -3,13 +3,16 @@ package interp
 import (
 	"context"
 	"strings"
+
+	playerv1 "github.com/Cidan/muddy/gen/proto/go/player/v1"
 )
 
 func init() {
 	i := Get()
 	i.Register(&CommandRef{
-		name: "say",
-		fn:   DoSay,
+		name:  "say",
+		state: []playerv1.Player_StateType{playerv1.Player_STATE_TYPE_PLAYING},
+		fn:    DoSay,
 	})
 }
 

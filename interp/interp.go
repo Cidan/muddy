@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	playerv1 "github.com/Cidan/muddy/gen/proto/go/player/v1"
 	"github.com/rs/zerolog/log"
 	"github.com/thejerf/suture/v4"
 )
@@ -22,7 +23,7 @@ type Command struct {
 type CommandRef struct {
 	name  string
 	alias []string
-	state []string
+	state []playerv1.Player_StateType
 	fn    commandCallback
 }
 
@@ -73,9 +74,6 @@ func (i *Interp) Do(c *Command) {
 }
 
 func (i *Interp) Register(c *CommandRef) {
-	for _, alias := range c.alias {
-		i.commands[alias] = c
-	}
 	i.commands[c.name] = c
 }
 
