@@ -29,7 +29,9 @@ func NewPlayer() *Player {
 		input:  make(chan string),
 		lock:   sync.RWMutex{},
 		ticker: time.NewTicker(time.Second),
-		data:   &playerv1.Player{},
+		data: &playerv1.Player{
+			Interp: playerv1.Player_INTERP_TYPE_PLAYING,
+		},
 	}
 }
 
@@ -241,4 +243,8 @@ func (p *Player) GetMove() (int32, int32) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 	return p.data.Move, p.data.MaxMove
+}
+
+func (p *Player) Interp() playerv1.Player_InterpType {
+	return p.data.Interp
 }

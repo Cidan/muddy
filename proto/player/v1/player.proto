@@ -28,13 +28,14 @@ message Player {
   // Max_move is the player's max move.
   int32 max_move = 8;
   
-  enum StateType {
-    STATE_TYPE_UNSPECIFIED = 0;
-    STATE_TYPE_LOGIN = 1;
-    STATE_TYPE_PLAYING = 2;
+  enum InterpType {
+    INTERP_TYPE_UNSPECIFIED = 0;
+    INTERP_TYPE_LOGIN = 1;
+    INTERP_TYPE_PLAYING = 2;
+    INTERP_TYPE_BUILDING = 3;
   }
 
-  StateType state = 9;
+  InterpType interp = 9;
 
 }
 

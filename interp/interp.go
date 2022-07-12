@@ -2,7 +2,6 @@ package interp
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"sync"
 
@@ -13,6 +12,7 @@ import (
 
 type Player interface {
 	Send(string, ...interface{}) error
+	Interp() playerv1.Player_InterpType
 }
 
 type Command struct {
@@ -20,38 +20,28 @@ type Command struct {
 	Text   string
 }
 
-type CommandRef struct {
-	name  string
-	alias []string
-	state []playerv1.Player_StateType
-	fn    commandCallback
-}
-
-type commandCallback func(context.Context, Player, ...string) error
-
-type Interp struct {
-	input    chan *Command
-	commands map[string]*CommandRef
+type Handler struct {
+	input   chan *Command
+	interps map[playerv1.Player_InterpType]*Interp
 }
 
 var (
-	once         sync.Once
-	interp       *Interp
-	ErrNoCommand = errors.New("command not found")
+	once   sync.Once
+	interp *Handler
 )
 
-func Get() *Interp {
+func Get() *Handler {
 	once.Do(func() {
-		interp = &Interp{
-			input:    make(chan *Command),
-			commands: make(map[string]*CommandRef),
+		interp = &Handler{
+			input:   make(chan *Command),
+			interps: make(map[playerv1.Player_InterpType]*Interp),
 		}
+		interp.interps[playerv1.Player_INTERP_TYPE_PLAYING] = newInterp()
 	})
-
 	return interp
 }
 
-func (i *Interp) Serve(ctx context.Context) error {
+func (i *Handler) Serve(ctx context.Context) error {
 	log.Info().Msg("Starting Interpreter")
 	for {
 		select {
@@ -60,7 +50,7 @@ func (i *Interp) Serve(ctx context.Context) error {
 		case c := <-i.input:
 			all := strings.SplitN(c.Text, " ", 2)
 			log.Debug().Strs("input", all).Msg("got command")
-			err := i.Process(ctx, c.Player, all[0], all[1:]...)
+			err := i.interps[c.Player.Interp()].Process(ctx, c.Player, all[0], all[1:]...)
 			switch err {
 			case ErrNoCommand:
 				c.Player.Send("huh?")
@@ -69,17 +59,10 @@ func (i *Interp) Serve(ctx context.Context) error {
 	}
 }
 
-func (i *Interp) Do(c *Command) {
+func (i *Handler) Do(c *Command) {
 	i.input <- c
 }
 
-func (i *Interp) Register(c *CommandRef) {
-	i.commands[c.name] = c
-}
-
-func (i *Interp) Process(ctx context.Context, player Player, command string, input ...string) error {
-	if i.commands[command] != nil {
-		return i.commands[command].fn(ctx, player, input...)
-	}
-	return ErrNoCommand
+func (i *Handler) Register(r *CommandRef) {
+	i.interps[r.interp].Register(r)
 }

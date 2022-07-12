@@ -2,20 +2,41 @@ package interp
 
 import (
 	"context"
-	"strings"
+	"errors"
 
 	playerv1 "github.com/Cidan/muddy/gen/proto/go/player/v1"
 )
 
-func init() {
-	i := Get()
-	i.Register(&CommandRef{
-		name:  "say",
-		state: []playerv1.Player_StateType{playerv1.Player_STATE_TYPE_PLAYING},
-		fn:    DoSay,
-	})
+var (
+	ErrNoCommand = errors.New("command not found")
+)
+
+type commandCallback func(context.Context, Player, ...string) error
+
+type CommandRef struct {
+	name   string
+	interp playerv1.Player_InterpType
+	alias  []string
+	fn     commandCallback
 }
 
-func DoSay(ctx context.Context, p Player, s ...string) error {
-	return p.Send("You say, '%s'", strings.Join(s, " "))
+type Interp struct {
+	commands map[string]*CommandRef
+}
+
+func newInterp() *Interp {
+	return &Interp{
+		commands: make(map[string]*CommandRef),
+	}
+}
+
+func (i *Interp) Register(r *CommandRef) {
+	i.commands[r.name] = r
+}
+
+func (i *Interp) Process(ctx context.Context, player Player, command string, input ...string) error {
+	if i.commands[command] != nil {
+		return i.commands[command].fn(ctx, player, input...)
+	}
+	return ErrNoCommand
 }
