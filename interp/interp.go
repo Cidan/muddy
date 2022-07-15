@@ -2,6 +2,7 @@ package interp
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"sync"
 
@@ -17,8 +18,9 @@ type Handler struct {
 }
 
 var (
-	once   sync.Once
-	interp *Handler
+	once        sync.Once
+	interp      *Handler
+	ErrNoInterp = errors.New("interp not set for this interp type")
 )
 
 func Get() *Handler {
@@ -64,11 +66,20 @@ func (h *Handler) Do(in *Input) {
 	h.input <- in
 }
 
-func (h *Handler) Register(r *Command) {
-	h.interps[r.interp].Register(r)
+func (h *Handler) Register(r *Command) error {
+	h.lock.RLock()
+	interp, ok := h.interps[r.interp]
+	h.lock.RUnlock()
+
+	if !ok {
+		return ErrNoInterp
+	}
+
+	interp.Register(r)
+	return nil
 }
 
-func (h *Handler) Add(interpType playerv1.Player_InterpType, interp Interp) {
+func (h *Handler) Set(interpType playerv1.Player_InterpType, interp Interp) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 	h.interps[interpType] = interp
