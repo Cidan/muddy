@@ -30,7 +30,7 @@ func NewPlayer() *Player {
 		lock:   sync.RWMutex{},
 		ticker: time.NewTicker(time.Second),
 		data: &playerv1.Player{
-			Interp: playerv1.Player_INTERP_TYPE_PLAYING,
+			Interp: playerv1.Player_INTERP_TYPE_LOGIN,
 		},
 	}
 }

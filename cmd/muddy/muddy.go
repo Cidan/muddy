@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	_ "github.com/Cidan/muddy/commands"
 	"github.com/Cidan/muddy/interp"
 	"github.com/Cidan/muddy/server"
 	"github.com/rs/zerolog"
