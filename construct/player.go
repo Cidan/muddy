@@ -44,6 +44,7 @@ func (p *Player) Serve(ctx context.Context) error {
 		case <-p.ticker.C:
 			// TODO(lobato): One second ticker here.
 		case input := <-p.input:
+			// TODO(lobato): sanitize player input
 			p.lock.RLock()
 			log.Debug().Str("name", p.data.Name).Str("input", input).Msg("Got input from player")
 			p.lock.RUnlock()
