@@ -13,6 +13,7 @@ import (
 type Handler struct {
 	input   chan *Input
 	interps map[playerv1.Player_InterpType]Interp
+	lock    sync.RWMutex
 }
 
 var (
@@ -26,7 +27,6 @@ func Get() *Handler {
 			input:   make(chan *Input),
 			interps: make(map[playerv1.Player_InterpType]Interp),
 		}
-		//interp.interps[playerv1.Player_INTERP_TYPE_PLAYING] = newInterp()
 	})
 	return interp
 }
@@ -40,7 +40,18 @@ func (i *Handler) Serve(ctx context.Context) error {
 		case in := <-i.input:
 			all := strings.SplitN(in.Text, " ", 2)
 			log.Debug().Strs("input", all).Msg("got command")
-			err := i.interps[in.Player.Interp()].Process(ctx, in.Player, all[0], all[1:]...)
+
+			i.lock.RLock()
+			interp, ok := i.interps[in.Player.Interp()]
+			i.lock.RUnlock()
+
+			if !ok {
+				log.Warn().Msg("player sent a command with an invalid interp")
+				in.Player.Send("huh?")
+				break
+			}
+
+			err := interp.Process(ctx, in.Player, all[0], all[1:]...)
 			switch err {
 			case ErrNoCommand:
 				in.Player.Send("huh?")
@@ -55,4 +66,10 @@ func (i *Handler) Do(in *Input) {
 
 func (i *Handler) Register(r *Command) {
 	i.interps[r.interp].Register(r)
+}
+
+func (i *Handler) Add(interpType playerv1.Player_InterpType, interp Interp) {
+	i.lock.Lock()
+	defer i.lock.Unlock()
+	i.interps[interpType] = interp
 }
