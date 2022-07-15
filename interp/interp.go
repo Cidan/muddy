@@ -31,19 +31,19 @@ func Get() *Handler {
 	return interp
 }
 
-func (i *Handler) Serve(ctx context.Context) error {
+func (h *Handler) Serve(ctx context.Context) error {
 	log.Info().Msg("Starting Interpreter")
 	for {
 		select {
 		case <-ctx.Done():
 			return suture.ErrDoNotRestart
-		case in := <-i.input:
+		case in := <-h.input:
 			all := strings.SplitN(in.Text, " ", 2)
 			log.Debug().Strs("input", all).Msg("got command")
 
-			i.lock.RLock()
-			interp, ok := i.interps[in.Player.Interp()]
-			i.lock.RUnlock()
+			h.lock.RLock()
+			interp, ok := h.interps[in.Player.Interp()]
+			h.lock.RUnlock()
 
 			if !ok {
 				log.Warn().Msg("player sent a command with an invalid interp")
@@ -60,16 +60,16 @@ func (i *Handler) Serve(ctx context.Context) error {
 	}
 }
 
-func (i *Handler) Do(in *Input) {
-	i.input <- in
+func (h *Handler) Do(in *Input) {
+	h.input <- in
 }
 
-func (i *Handler) Register(r *Command) {
-	i.interps[r.interp].Register(r)
+func (h *Handler) Register(r *Command) {
+	h.interps[r.interp].Register(r)
 }
 
-func (i *Handler) Add(interpType playerv1.Player_InterpType, interp Interp) {
-	i.lock.Lock()
-	defer i.lock.Unlock()
-	i.interps[interpType] = interp
+func (h *Handler) Add(interpType playerv1.Player_InterpType, interp Interp) {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+	h.interps[interpType] = interp
 }
