@@ -28,6 +28,7 @@ func Get() *Handler {
 		interp = &Handler{
 			input:   make(chan *Input),
 			interps: make(map[playerv1.Player_InterpType]Interp),
+			lock:    sync.RWMutex{},
 		}
 	})
 	return interp
