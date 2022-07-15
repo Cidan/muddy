@@ -47,7 +47,7 @@ func (p *Player) Serve(ctx context.Context) error {
 			p.lock.RLock()
 			log.Debug().Str("name", p.data.Name).Str("input", input).Msg("Got input from player")
 			p.lock.RUnlock()
-			interp.Get().Do(&interp.Command{
+			interp.Get().Do(&interp.Input{
 				Player: p,
 				Text:   input,
 			})

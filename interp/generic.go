@@ -3,22 +3,35 @@ package interp
 import (
 	"context"
 	"errors"
-
-	playerv1 "github.com/Cidan/muddy/gen/proto/go/player/v1"
 )
 
 var (
 	ErrNoCommand = errors.New("command not found")
 )
 
-type commandCallback func(context.Context, Player, ...string) error
-
-type CommandRef struct {
-	name   string
-	interp playerv1.Player_InterpType
-	alias  []string
-	fn     commandCallback
+type GenericInterp struct {
+	commands map[string]*Command
 }
+
+func NewGenericInterp() Interp {
+	return &GenericInterp{
+		commands: make(map[string]*Command),
+	}
+}
+
+func (g *GenericInterp) Process(ctx context.Context, player Player, command string, input ...string) error {
+	if c, ok := g.commands[command]; !ok {
+		return ErrNoCommand
+	} else {
+		return c.fn(ctx, player, input...)
+	}
+}
+
+func (g *GenericInterp) Register(c *Command) {
+	g.commands[c.name] = c
+}
+
+/*
 
 type Interp struct {
 	commands map[string]*CommandRef
@@ -40,3 +53,4 @@ func (i *Interp) Process(ctx context.Context, player Player, command string, inp
 	}
 	return ErrNoCommand
 }
+*/
