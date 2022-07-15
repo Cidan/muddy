@@ -17,21 +17,23 @@ import (
 type Player struct {
 	connection net.Conn
 	input      chan string //*bufio.Reader
+	disconnect chan bool
 	data       *playerv1.Player
 	lock       sync.RWMutex
 	ticker     *time.Ticker
+	interp     playerv1.Player_InterpType
 	textBuffer string
 }
 
 // NewPlayer creates a new player object
 func NewPlayer() *Player {
 	return &Player{
-		input:  make(chan string),
-		lock:   sync.RWMutex{},
-		ticker: time.NewTicker(time.Second),
-		data: &playerv1.Player{
-			Interp: playerv1.Player_INTERP_TYPE_LOGIN,
-		},
+		input:      make(chan string),
+		disconnect: make(chan bool),
+		lock:       sync.RWMutex{},
+		ticker:     time.NewTicker(time.Second),
+		interp:     playerv1.Player_INTERP_TYPE_LOGIN,
+		data:       &playerv1.Player{},
 	}
 }
 
@@ -55,22 +57,27 @@ func (p *Player) Serve(ctx context.Context) error {
 			// Slow the user down so they can't spam the game.
 			// TODO(lobato): make this adjustable as part of a "haste" mechanism
 			time.Sleep(time.Millisecond * 50)
+		case <-p.disconnect:
+			if p.interp == playerv1.Player_INTERP_TYPE_LOGIN {
+				p.interp = playerv1.Player_INTERP_TYPE_UNSPECIFIED
+				log.Debug().Msg("player has disconnected during login, cleaning up")
+				p.cleanup()
+				return suture.ErrDoNotRestart
+			}
 		case <-ctx.Done():
-			p.Close()
+			p.cleanup()
 			// TODO(lobato): cleanup, server is shutting down.
 			return suture.ErrDoNotRestart
 		}
 	}
 }
 
-// Close will completely remove a player from the world without warning, unlinking
-// their state, disconnecting the player connection, etc.
-func (p *Player) Close() {
+func (p *Player) cleanup() {
+	p.ticker.Stop()
+	close(p.input)
 	if p.connection != nil {
 		p.connection.Close()
 	}
-	p.ticker.Stop()
-	close(p.input)
 }
 
 func (p *Player) write(text string) error {
@@ -119,12 +126,13 @@ func (p *Player) Flush() error {
 }
 
 // SetConnection sets the user's connection to the given net.Conn.
-func (p *Player) SetConnection(c net.Conn) {
+func (p *Player) SetConnection(c net.Conn) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	if p.connection != nil {
-		p.connection.Close()
+		return fmt.Errorf("you must disconnect the player before you set their connection")
 	}
+
 	p.connection = c
 	s := bufio.NewScanner(c)
 	// Wrap the connection reader in a channel and launch it
@@ -137,8 +145,14 @@ func (p *Player) SetConnection(c net.Conn) {
 			}
 			p.input <- s.Text()
 		}
+		p.disconnect <- true
 		log.Debug().Msg("player bufio scanner exiting")
 	}(s)
+	return nil
+}
+
+func (p *Player) Disconnect() {
+	p.disconnect <- true
 }
 
 // SetName sets the name of this player.
@@ -255,5 +269,5 @@ func (p *Player) GetMove() (int32, int32) {
 }
 
 func (p *Player) Interp() playerv1.Player_InterpType {
-	return p.data.Interp
+	return p.interp
 }

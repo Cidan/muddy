@@ -35,8 +35,6 @@ message Player {
     INTERP_TYPE_BUILDING = 3;
   }
 
-  InterpType interp = 9;
-
 }
 
 message Output {
