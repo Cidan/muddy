@@ -56,13 +56,21 @@ func (p *Player) Serve(ctx context.Context) error {
 			// TODO(lobato): make this adjustable as part of a "haste" mechanism
 			time.Sleep(time.Millisecond * 50)
 		case <-ctx.Done():
+			p.Close()
 			// TODO(lobato): cleanup, server is shutting down.
-			if p.connection != nil {
-				p.connection.Close()
-			}
 			return suture.ErrDoNotRestart
 		}
 	}
+}
+
+// Close will completely remove a player from the world without warning, unlinking
+// their state, disconnecting the player connection, etc.
+func (p *Player) Close() {
+	if p.connection != nil {
+		p.connection.Close()
+	}
+	p.ticker.Stop()
+	close(p.input)
 }
 
 func (p *Player) write(text string) error {
