@@ -37,6 +37,7 @@ func (s *Server) Serve(ctx context.Context) error {
 		log.Err(err).Msg("unable to listen to port")
 		return suture.ErrTerminateSupervisorTree
 	}
+
 	go func() {
 		for {
 			c, err := l.Accept()

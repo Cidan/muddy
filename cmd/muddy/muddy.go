@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"os"
-	"time"
 
 	_ "github.com/Cidan/muddy/commands"
 	"github.com/Cidan/muddy/interp"
@@ -13,14 +12,16 @@ import (
 )
 
 func main() {
-	Start()
+	Start(context.Background())
 }
 
-func Start() {
+func Start(ctx context.Context) {
 	// Enable pretty logging while in dev.
+	// TODO(lobato): figure out why this races when testing
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	ctx := context.Background()
 	go server.Get().Serve(ctx)
 	go interp.Get().Serve(ctx)
-	time.Sleep(time.Second * 60)
+	<-ctx.Done()
+	// TODO(lobato): wait for sigint code
+
 }
