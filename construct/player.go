@@ -276,6 +276,12 @@ func (p *Player) Interp() playerv1.Player_InterpType {
 	return p.interp
 }
 
+func (p *Player) SetInterp(interp playerv1.Player_InterpType) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.interp = interp
+}
+
 func (p *Player) LoginState() string {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
@@ -286,4 +292,10 @@ func (p *Player) SetLoginState(state string) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	p.loginState = state
+}
+
+func (p *Player) Name() string {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	return p.data.Name
 }
