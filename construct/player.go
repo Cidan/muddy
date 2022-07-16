@@ -77,6 +77,7 @@ func (p *Player) Serve(ctx context.Context) error {
 				p.cleanup()
 				return suture.ErrDoNotRestart
 			}
+			// TODO(lobato): Handle linkdead for logged in players
 		case <-ctx.Done():
 			p.cleanup()
 			// TODO(lobato): cleanup, server is shutting down.

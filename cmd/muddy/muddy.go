@@ -13,6 +13,10 @@ import (
 )
 
 func main() {
+	Start()
+}
+
+func Start() {
 	// Enable pretty logging while in dev.
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	sup := suture.New("muddy", suture.Spec{
@@ -26,5 +30,4 @@ func main() {
 	if err := sup.Serve(context.Background()); err != nil {
 		panic(err)
 	}
-
 }
