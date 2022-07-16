@@ -4,6 +4,13 @@ package player.v1;
 // Player is a human player construct. Temporary state should not be stored
 // in this proto.
 message Player {
+  enum InterpType {
+    INTERP_TYPE_UNSPECIFIED = 0;
+    INTERP_TYPE_LOGIN = 1;
+    INTERP_TYPE_PLAYING = 2;
+    INTERP_TYPE_BUILDING = 3;
+  }
+
   // UUID is this player's unique ID.
   string uuid = 1;
 
@@ -28,13 +35,8 @@ message Player {
   // Max_move is the player's max move.
   int32 max_move = 8;
   
-  enum InterpType {
-    INTERP_TYPE_UNSPECIFIED = 0;
-    INTERP_TYPE_LOGIN = 1;
-    INTERP_TYPE_PLAYING = 2;
-    INTERP_TYPE_BUILDING = 3;
-  }
-
+  // Password is the player's password used for logging in.
+  string password = 9;
 }
 
 message Output {

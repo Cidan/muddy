@@ -28,6 +28,9 @@ type Player interface {
 	Interp() playerv1.Player_InterpType
 	SetName(string)
 	Name() string
+	SetPassword(string)
+	CheckPassword(string) bool
+	Password() string
 }
 
 type Interp interface {

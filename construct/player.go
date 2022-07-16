@@ -299,3 +299,23 @@ func (p *Player) Name() string {
 	defer p.lock.RUnlock()
 	return p.data.Name
 }
+
+func (p *Player) Password() string {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	return p.data.Password
+}
+
+func (p *Player) SetPassword(password string) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	// TODO(lobato): hash and salt the password
+	p.data.Password = password
+}
+
+func (p *Player) CheckPassword(password string) bool {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	// TODO(lobato): hash and salt the password
+	return p.data.Password == password
+}

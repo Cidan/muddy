@@ -18,6 +18,13 @@ func (l *Login) Process(ctx context.Context, player interp.Player, input string,
 		l.AskName(ctx, player, input)
 	case "CONFIRM_NAME":
 		l.ConfirmName(ctx, player, input)
+	case "NEW_PASSWORD":
+		l.NewPassword(ctx, player, input)
+	case "CONFIRM_PASSWORD":
+		l.ConfirmPassword(ctx, player, input)
+	default:
+		log.Warn().Str("state", player.LoginState()).Msg("player login state is invalid and not handled.")
+		player.Send("You're in a weird, invalid state. Contact the MUD administrators.")
 	}
 	return nil
 }
@@ -33,13 +40,31 @@ func (l *Login) AskName(ctx context.Context, player interp.Player, input string)
 func (l *Login) ConfirmName(ctx context.Context, player interp.Player, input string) {
 	if strings.HasPrefix(strings.ToLower(input), "y") {
 		player.Send("Welcome, %s!", player.Name())
-		player.SetInterp(playerv1.Player_INTERP_TYPE_PLAYING)
+		player.Send("Please choose a password: ")
+		player.SetLoginState("NEW_PASSWORD")
 		return
 	}
 
 	player.Send("Okay, what would you like your name to be?")
 	player.SetName("")
 	player.SetLoginState("ASK_NAME")
+}
+
+func (l *Login) NewPassword(ctx context.Context, player interp.Player, input string) {
+	player.SetPassword(input)
+	player.Send("Type your password again to confirm: ")
+	player.SetLoginState("CONFIRM_PASSWORD")
+}
+
+func (l *Login) ConfirmPassword(ctx context.Context, player interp.Player, input string) {
+	if !player.CheckPassword(input) {
+		player.Send("Password's do not match, please re-enter your password: ")
+		player.SetLoginState("NEW_PASSWORD")
+		return
+	}
+	player.Send("Password confirmed, welcome!")
+	player.SetLoginState("")
+	player.SetInterp(playerv1.Player_INTERP_TYPE_PLAYING)
 }
 
 func init() {
