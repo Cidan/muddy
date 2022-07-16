@@ -42,7 +42,6 @@ func (h *Handler) Serve(ctx context.Context) error {
 			return suture.ErrDoNotRestart
 		case in := <-h.input:
 			all := strings.SplitN(in.Text, " ", 2)
-			log.Debug().Strs("input", all).Msg("got command")
 
 			h.lock.RLock()
 			interp, ok := h.interps[in.Player.Interp()]

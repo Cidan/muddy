@@ -3,14 +3,19 @@ package construct
 import (
 	"bufio"
 	"context"
+	"crypto/sha512"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
 	playerv1 "github.com/Cidan/muddy/gen/proto/go/player/v1"
 	"github.com/Cidan/muddy/interp"
 	"github.com/rs/zerolog/log"
+	uuid "github.com/satori/go.uuid"
 	"github.com/thejerf/suture/v4"
 )
 
@@ -35,7 +40,9 @@ func NewPlayer() *Player {
 		ticker:     time.NewTicker(time.Second),
 		interp:     playerv1.Player_INTERP_TYPE_LOGIN,
 		loginState: "ASK_NAME",
-		data:       &playerv1.Player{},
+		data: &playerv1.Player{
+			Uuid: uuid.NewV4().String(),
+		},
 	}
 }
 
@@ -50,7 +57,11 @@ func (p *Player) Serve(ctx context.Context) error {
 		case input := <-p.input:
 			// TODO(lobato): sanitize player input
 			p.lock.RLock()
-			log.Debug().Str("name", p.data.Name).Str("input", input).Msg("Got input from player")
+			if !strings.Contains(p.loginState, "PASSWORD") {
+				log.Debug().Str("name", p.data.Name).Str("input", input).Msg("got input from player")
+			} else {
+				log.Debug().Str("name", p.data.Name).Str("input", "xxxxx").Msg("got password input from player")
+			}
 			p.lock.RUnlock()
 			interp.Get().Do(&interp.Input{
 				Player: p,
@@ -300,6 +311,12 @@ func (p *Player) Name() string {
 	return p.data.Name
 }
 
+func (p *Player) hashPassword(password string) string {
+	h := sha512.New()
+	io.WriteString(h, fmt.Sprintf("%s%s", p.data.Uuid, password))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
 func (p *Player) Password() string {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
@@ -309,13 +326,11 @@ func (p *Player) Password() string {
 func (p *Player) SetPassword(password string) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	// TODO(lobato): hash and salt the password
-	p.data.Password = password
+	p.data.Password = p.hashPassword(password)
 }
 
 func (p *Player) CheckPassword(password string) bool {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-	// TODO(lobato): hash and salt the password
-	return p.data.Password == password
+	return p.data.Password == p.hashPassword(password)
 }
