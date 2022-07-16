@@ -17,14 +17,12 @@ var (
 )
 
 type Server struct {
-	supervisor    *suture.Supervisor
 	newConnection chan net.Conn
 }
 
 func Get() *Server {
 	once.Do(func() {
 		server = &Server{
-			supervisor:    suture.NewSimple("server"),
 			newConnection: make(chan net.Conn),
 		}
 	})
@@ -43,9 +41,10 @@ func (s *Server) Serve(ctx context.Context) error {
 		for {
 			c, err := l.Accept()
 			if err != nil {
-				s.newConnection <- nil
+				log.Err(err).Msg("error accepting new conn")
+				return
 			} else {
-				s.handleConnection(c)
+				s.newConnection <- c
 				continue
 			}
 		}
@@ -57,7 +56,7 @@ func (s *Server) Serve(ctx context.Context) error {
 			if conn == nil {
 				return fmt.Errorf("error accepting new conn")
 			}
-			s.handleConnection(conn)
+			s.handleConnection(ctx, conn)
 		case <-ctx.Done():
 			log.Debug().Msg("listening server shutting down, context cancelled")
 			l.Close()
@@ -66,16 +65,12 @@ func (s *Server) Serve(ctx context.Context) error {
 	}
 }
 
-func (s *Server) Supervisor() *suture.Supervisor {
-	return s.supervisor
-}
-
-func (s *Server) handleConnection(c net.Conn) {
+func (s *Server) handleConnection(ctx context.Context, c net.Conn) {
 	log.Info().
 		Str("address", c.RemoteAddr().String()).
 		Msg("New remote player connection")
 	p := construct.NewPlayer()
-	s.supervisor.Add(p)
+	go p.Serve(ctx)
 
 	p.SetConnection(c)
 	p.Send("Hello, by which name would you like to be known?")

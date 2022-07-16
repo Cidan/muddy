@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"os"
+	"time"
 
 	_ "github.com/Cidan/muddy/commands"
 	"github.com/Cidan/muddy/interp"
 	"github.com/Cidan/muddy/server"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/thejerf/suture/v4"
 )
 
 func main() {
@@ -19,15 +19,8 @@ func main() {
 func Start() {
 	// Enable pretty logging while in dev.
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	sup := suture.New("muddy", suture.Spec{
-		PassThroughPanics: true,
-	})
-
-	sup.Add(server.Get())
-	sup.Add(server.Get().Supervisor())
-	sup.Add(interp.Get())
-
-	if err := sup.Serve(context.Background()); err != nil {
-		panic(err)
-	}
+	ctx := context.Background()
+	go server.Get().Serve(ctx)
+	go interp.Get().Serve(ctx)
+	time.Sleep(time.Second * 60)
 }
