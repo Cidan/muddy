@@ -22,6 +22,7 @@ type Input struct {
 
 type Player interface {
 	Send(string, ...interface{}) error
+	LoginState() string
 	Interp() playerv1.Player_InterpType
 }
 

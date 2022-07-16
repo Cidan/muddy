@@ -8,17 +8,25 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type Login struct{}
+type Login struct {
+}
 
 func (l *Login) Process(ctx context.Context, player interp.Player, input string, args ...string) error {
-	// TODO(lobato): Login process here, state machine, etc.
-	player.Send("test :)")
+	switch player.LoginState() {
+	case "ASK_NAME":
+		l.AskName(ctx, player, input)
+	}
 	return nil
 }
 
 func (l *Login) Register(c *interp.Command) {}
 
+func (l *Login) AskName(ctx context.Context, player interp.Player, input string) {
+	player.Send("Are you sure you want your name to be %s?", input)
+}
+
 func init() {
 	log.Debug().Msg("registering login interp")
-	interp.Get().Set(playerv1.Player_INTERP_TYPE_LOGIN, &Login{})
+	l := &Login{}
+	interp.Get().Set(playerv1.Player_INTERP_TYPE_LOGIN, l)
 }

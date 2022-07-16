@@ -22,6 +22,7 @@ type Player struct {
 	lock       sync.RWMutex
 	ticker     *time.Ticker
 	interp     playerv1.Player_InterpType
+	loginState string
 	textBuffer string
 }
 
@@ -33,6 +34,7 @@ func NewPlayer() *Player {
 		lock:       sync.RWMutex{},
 		ticker:     time.NewTicker(time.Second),
 		interp:     playerv1.Player_INTERP_TYPE_LOGIN,
+		loginState: "ASK_NAME",
 		data:       &playerv1.Player{},
 	}
 }
@@ -269,5 +271,19 @@ func (p *Player) GetMove() (int32, int32) {
 }
 
 func (p *Player) Interp() playerv1.Player_InterpType {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
 	return p.interp
+}
+
+func (p *Player) LoginState() string {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	return p.loginState
+}
+
+func (p *Player) SetLoginState(state string) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.loginState = state
 }
