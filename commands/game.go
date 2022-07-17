@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"strings"
 	"sync"
 
 	playerv1 "github.com/Cidan/muddy/gen/proto/go/player/v1"
@@ -31,7 +32,21 @@ func (g *Game) Register(c *interp.Command) {
 	g.commands[c.Name] = c
 }
 
+func (g *Game) DoSay(ctx context.Context, player interp.Player, input ...string) error {
+	text := strings.Join(input, " ")
+	player.Send("You say '%s'", text)
+	// player.SendToRoom("%s says, '%s'", player.Name(), text)
+	return nil
+}
+
 func init() {
 	log.Debug().Msg("registering game interp")
-	interp.Get().Set(playerv1.Player_INTERP_TYPE_PLAYING, &Game{})
+	g := &Game{
+		commands: make(map[string]*interp.Command),
+	}
+	g.Register(&interp.Command{
+		Name: "say",
+		Fn:   g.DoSay,
+	})
+	interp.Get().Set(playerv1.Player_INTERP_TYPE_PLAYING, g)
 }

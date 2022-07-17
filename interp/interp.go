@@ -66,19 +66,6 @@ func (h *Handler) Do(in *Input) {
 	h.input <- in
 }
 
-func (h *Handler) Register(r *Command) error {
-	h.lock.RLock()
-	interp, ok := h.interps[r.Interp]
-	h.lock.RUnlock()
-
-	if !ok {
-		return ErrNoInterp
-	}
-
-	interp.Register(r)
-	return nil
-}
-
 func (h *Handler) Set(interpType playerv1.Player_InterpType, interp Interp) {
 	h.lock.Lock()
 	defer h.lock.Unlock()

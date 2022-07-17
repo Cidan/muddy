@@ -2,17 +2,21 @@ package interp
 
 import (
 	"context"
+	"errors"
 
 	playerv1 "github.com/Cidan/muddy/gen/proto/go/player/v1"
+)
+
+var (
+	ErrNoCommand = errors.New("no such command")
 )
 
 type commandCallback func(context.Context, Player, ...string) error
 
 type Command struct {
-	Name   string
-	Interp playerv1.Player_InterpType
-	Alias  []string
-	Fn     commandCallback
+	Name  string
+	Alias []string
+	Fn    commandCallback
 }
 
 type Input struct {
