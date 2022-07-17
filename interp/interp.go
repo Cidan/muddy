@@ -18,9 +18,10 @@ type Handler struct {
 }
 
 var (
-	once        sync.Once
-	interp      *Handler
-	ErrNoInterp = errors.New("interp not set for this interp type")
+	once         sync.Once
+	interp       *Handler
+	ErrNoInterp  = errors.New("interp not set for this interp type")
+	ErrNoCommand = errors.New("no such command")
 )
 
 func Get() *Handler {

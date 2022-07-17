@@ -2,13 +2,8 @@ package interp
 
 import (
 	"context"
-	"errors"
 
 	playerv1 "github.com/Cidan/muddy/gen/proto/go/player/v1"
-)
-
-var (
-	ErrNoCommand = errors.New("no such command")
 )
 
 type commandCallback func(context.Context, Player, ...string) error
