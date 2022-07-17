@@ -30,12 +30,12 @@ func (g *GenericInterp) Process(ctx context.Context, player Player, command stri
 	if !ok {
 		return ErrNoCommand
 	} else {
-		return c.fn(ctx, player, input...)
+		return c.Fn(ctx, player, input...)
 	}
 }
 
 func (g *GenericInterp) Register(c *Command) {
 	g.lock.Lock()
 	defer g.lock.Unlock()
-	g.commands[c.name] = c
+	g.commands[c.Name] = c
 }

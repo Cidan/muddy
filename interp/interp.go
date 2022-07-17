@@ -68,7 +68,7 @@ func (h *Handler) Do(in *Input) {
 
 func (h *Handler) Register(r *Command) error {
 	h.lock.RLock()
-	interp, ok := h.interps[r.interp]
+	interp, ok := h.interps[r.Interp]
 	h.lock.RUnlock()
 
 	if !ok {

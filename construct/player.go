@@ -16,7 +16,7 @@ import (
 	"github.com/Cidan/muddy/interp"
 	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
-	"github.com/thejerf/suture/v4"
+	"google.golang.org/protobuf/proto"
 )
 
 type Player struct {
@@ -63,6 +63,9 @@ func (p *Player) Serve(ctx context.Context) error {
 				log.Debug().Str("name", p.data.Name).Str("input", "xxxxx").Msg("got password input from player")
 			}
 			p.lock.RUnlock()
+
+			// Send the player's input to the interpreter, which handles all
+			// input serially.
 			interp.Get().Do(&interp.Input{
 				Player: p,
 				Text:   input,
@@ -75,13 +78,13 @@ func (p *Player) Serve(ctx context.Context) error {
 				p.interp = playerv1.Player_INTERP_TYPE_UNSPECIFIED
 				log.Debug().Msg("player has disconnected during login, cleaning up")
 				p.cleanup()
-				return suture.ErrDoNotRestart
+				return nil
 			}
 			// TODO(lobato): Handle linkdead for logged in players
 		case <-ctx.Done():
 			p.cleanup()
 			// TODO(lobato): cleanup, server is shutting down.
-			return suture.ErrDoNotRestart
+			return nil
 		}
 	}
 }
@@ -334,4 +337,16 @@ func (p *Player) CheckPassword(password string) bool {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 	return p.data.Password == p.hashPassword(password)
+}
+
+func (p *Player) Save() error {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	data, err := proto.Marshal(p.data)
+	if err != nil {
+		return err
+	}
+	// TODO(lobato): save data
+	_ = data
+	return nil
 }

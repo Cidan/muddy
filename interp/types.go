@@ -9,10 +9,10 @@ import (
 type commandCallback func(context.Context, Player, ...string) error
 
 type Command struct {
-	name   string
-	interp playerv1.Player_InterpType
-	alias  []string
-	fn     commandCallback
+	Name   string
+	Interp playerv1.Player_InterpType
+	Alias  []string
+	Fn     commandCallback
 }
 
 type Input struct {
