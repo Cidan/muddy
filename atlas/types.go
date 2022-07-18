@@ -27,8 +27,8 @@ type Player interface {
 
 type Room interface {
 	Coordinates() *roomv1.Room_Coordinates
-	AddPlayer(Player)
-	RemovePlayer(Player)
+	AddPlayer(string, Player)
+	RemovePlayer(string)
 	Send(string, Player, ...interface{})
 	Name() string
 }

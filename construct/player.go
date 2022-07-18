@@ -93,11 +93,18 @@ func (p *Player) Serve(ctx context.Context) error {
 }
 
 func (p *Player) cleanup() {
+	p.lock.Lock()
+	defer p.lock.Unlock()
 	p.ticker.Stop()
 	close(p.input)
 	if p.connection != nil {
 		p.connection.Close()
 	}
+
+	if p.room != nil {
+		p.room.RemovePlayer(p.data.Uuid)
+	}
+	// TODO(lobato): Remove from world
 }
 
 func (p *Player) write(text string) error {
@@ -379,13 +386,13 @@ func (p *Player) Save() error {
 // ToRoom moves the player to the given room.
 func (p *Player) ToRoom(r atlas.Room) {
 	p.lock.Lock()
+	defer p.lock.Unlock()
 	if p.room != nil {
-		p.room.RemovePlayer(p)
+		p.room.RemovePlayer(p.data.Uuid)
 	}
-	p.room = r
-	p.lock.Unlock()
 
-	r.AddPlayer(p)
+	p.room = r
+	r.AddPlayer(p.data.Uuid, p)
 }
 
 func (p *Player) Room() atlas.Room {

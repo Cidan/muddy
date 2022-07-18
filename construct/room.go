@@ -38,16 +38,16 @@ func (r *Room) Coordinates() *roomv1.Room_Coordinates {
 	return r.data.Coordinates
 }
 
-func (r *Room) AddPlayer(p atlas.Player) {
+func (r *Room) AddPlayer(uuid string, p atlas.Player) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
-	r.players[p.Uuid()] = p
+	r.players[uuid] = p
 }
 
-func (r *Room) RemovePlayer(p atlas.Player) {
+func (r *Room) RemovePlayer(uuid string) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
-	delete(r.players, p.Uuid())
+	delete(r.players, uuid)
 }
 
 func (r *Room) Save() error {
