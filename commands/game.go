@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/Cidan/muddy/atlas"
+	"github.com/Cidan/muddy/color"
 	playerv1 "github.com/Cidan/muddy/gen/proto/go/player/v1"
 	"github.com/Cidan/muddy/interp"
 	"github.com/rs/zerolog/log"
@@ -23,6 +24,9 @@ func (g *Game) Process(ctx context.Context, player atlas.Player, command string,
 	if !ok {
 		return interp.ErrNoCommand
 	} else {
+		for n, t := range input {
+			input[n] = color.Parse(t)
+		}
 		return c.Fn(ctx, player, input...)
 	}
 }
