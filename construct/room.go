@@ -28,3 +28,9 @@ func (r *Room) SetCoordinates(c *roomv1.Room_Coordinates) {
 	defer r.lock.Unlock()
 	r.data.Coordinates = c
 }
+
+func (r *Room) Coordinates() *roomv1.Room_Coordinates {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
+	return r.data.Coordinates
+}
