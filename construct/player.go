@@ -82,6 +82,7 @@ func (p *Player) Serve(ctx context.Context) error {
 				p.cleanup()
 				return nil
 			}
+			p.SendToRoom("%s's eyes go blank as they stop responding (disconnected).", p.data.Name)
 			// TODO(lobato): Handle linkdead for logged in players
 		case <-ctx.Done():
 			p.cleanup()
