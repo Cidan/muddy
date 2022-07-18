@@ -118,6 +118,12 @@ func (p *Player) writeRaw(text string, args ...interface{}) {
 	}
 }
 
+func (p *Player) SendToRoom(text string, args ...interface{}) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	p.room.Send(text, p, args...)
+}
+
 // Send will send the given text to the player.
 func (p *Player) Send(text string, args ...interface{}) error {
 	p.lock.Lock()
@@ -362,8 +368,11 @@ func (p *Player) Save() error {
 // ToRoom moves the player to the given room.
 func (p *Player) ToRoom(r atlas.Room) {
 	p.lock.Lock()
-	defer p.lock.Unlock()
-	p.room.RemovePlayer(p)
+	if p.room != nil {
+		p.room.RemovePlayer(p)
+	}
 	p.room = r
+	p.lock.Unlock()
+
 	r.AddPlayer(p)
 }

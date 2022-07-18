@@ -36,7 +36,7 @@ func (g *Game) Register(c *interp.Command) {
 func (g *Game) DoSay(ctx context.Context, player atlas.Player, input ...string) error {
 	text := strings.Join(input, " ")
 	player.Send("You say '%s'", text)
-	// player.SendToRoom("%s says, '%s'", player.Name(), text)
+	player.SendToRoom("%s says, '%s'", player.Name(), text)
 	return nil
 }
 

@@ -61,3 +61,14 @@ func (r *Room) Save() error {
 	_ = data
 	return nil
 }
+
+func (r *Room) Send(text string, except atlas.Player, args ...interface{}) {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
+	for id, p := range r.players {
+		if id == except.Uuid() {
+			continue
+		}
+		p.Send(text, args...)
+	}
+}
