@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/Cidan/muddy/atlas"
 	playerv1 "github.com/Cidan/muddy/gen/proto/go/player/v1"
 	"github.com/Cidan/muddy/interp"
 	"github.com/rs/zerolog/log"
@@ -12,7 +13,7 @@ import (
 type Login struct {
 }
 
-func (l *Login) Process(ctx context.Context, player interp.Player, input string, args ...string) error {
+func (l *Login) Process(ctx context.Context, player atlas.Player, input string, args ...string) error {
 	switch player.LoginState() {
 	case "ASK_NAME":
 		l.AskName(ctx, player, input)
@@ -31,13 +32,13 @@ func (l *Login) Process(ctx context.Context, player interp.Player, input string,
 
 func (l *Login) Register(c *interp.Command) {}
 
-func (l *Login) AskName(ctx context.Context, player interp.Player, input string) {
+func (l *Login) AskName(ctx context.Context, player atlas.Player, input string) {
 	player.SetName(input)
 	player.Send("Are you sure you want your name to be %s?", input)
 	player.SetLoginState("CONFIRM_NAME")
 }
 
-func (l *Login) ConfirmName(ctx context.Context, player interp.Player, input string) {
+func (l *Login) ConfirmName(ctx context.Context, player atlas.Player, input string) {
 	if strings.HasPrefix(strings.ToLower(input), "y") {
 		player.Send("Welcome, %s!", player.Name())
 		player.Send("Please choose a password: ")
@@ -50,13 +51,13 @@ func (l *Login) ConfirmName(ctx context.Context, player interp.Player, input str
 	player.SetLoginState("ASK_NAME")
 }
 
-func (l *Login) NewPassword(ctx context.Context, player interp.Player, input string) {
+func (l *Login) NewPassword(ctx context.Context, player atlas.Player, input string) {
 	player.SetPassword(input)
 	player.Send("Type your password again to confirm: ")
 	player.SetLoginState("CONFIRM_PASSWORD")
 }
 
-func (l *Login) ConfirmPassword(ctx context.Context, player interp.Player, input string) {
+func (l *Login) ConfirmPassword(ctx context.Context, player atlas.Player, input string) {
 	if !player.CheckPassword(input) {
 		player.Send("Password's do not match, please re-enter your password: ")
 		player.SetLoginState("NEW_PASSWORD")
