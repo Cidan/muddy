@@ -6,6 +6,7 @@ import (
 )
 
 type Player interface {
+	Uuid() string
 	Send(string, ...interface{}) error
 	LoginState() string
 	SetLoginState(string)
@@ -20,4 +21,6 @@ type Player interface {
 
 type Room interface {
 	Coordinates() *roomv1.Room_Coordinates
+	AddPlayer(Player)
+	RemovePlayer(Player)
 }

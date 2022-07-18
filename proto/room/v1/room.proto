@@ -16,4 +16,32 @@ message Room {
 
   Coordinates coordinates = 4;
 
+  message Exit {
+    // Name is the name of the exit that can be used to interact with it.
+    string name = 1;
+
+    // Open is true if the exit is open and unobstructed, false if it's closed
+    // but can be opened.
+    bool open = 2;
+
+    // Locked is true if the exit is locked and can not be opened.
+    bool locked = 3;
+
+    // AlwaysOpen makes this exit always open -- all other values are ignored
+    // and passage through this exit is always valid.
+    bool always_open = 4;
+
+    // Target, if set, teleports the player to the target room UUID when
+    // entering this exit. This only works on exits attached to items, and is
+    // ignored on cardinal direction exits.
+    optional string target_room = 5;
+    // TODO(lobato): key item for unlocking
+  }
+
+  Exit north_exit = 5;
+  Exit east_exit = 6;
+  Exit south_exit = 7;
+  Exit west_exit = 8;
+  Exit up_exit = 9;
+  Exit down_exit = 10;
 }

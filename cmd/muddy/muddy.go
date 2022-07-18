@@ -22,6 +22,7 @@ func main() {
 func Start(ctx context.Context) {
 	// Enable pretty logging while in dev.
 	// TODO(lobato): figure out why this races when testing
+	// Probably because of init side effects in commands import
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	makeWorld()
 	time.Sleep(time.Second * 1)

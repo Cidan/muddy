@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Cidan/muddy/atlas"
 	playerv1 "github.com/Cidan/muddy/gen/proto/go/player/v1"
 	"github.com/Cidan/muddy/interp"
 	"github.com/rs/zerolog/log"
@@ -27,6 +28,7 @@ type Player struct {
 	lock       sync.RWMutex
 	ticker     *time.Ticker
 	interp     playerv1.Player_InterpType
+	room       atlas.Room
 	loginState string
 	textBuffer string
 }
@@ -170,6 +172,12 @@ func (p *Player) SetConnection(c net.Conn) error {
 
 func (p *Player) Disconnect() {
 	p.disconnect <- true
+}
+
+func (p *Player) Uuid() string {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	return p.data.Uuid
 }
 
 // SetName sets the name of this player.
@@ -349,4 +357,13 @@ func (p *Player) Save() error {
 	// TODO(lobato): save data
 	_ = data
 	return nil
+}
+
+// ToRoom moves the player to the given room.
+func (p *Player) ToRoom(r atlas.Room) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.room.RemovePlayer(p)
+	p.room = r
+	r.AddPlayer(p)
 }
