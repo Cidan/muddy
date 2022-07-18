@@ -28,7 +28,8 @@ message Room {
     bool locked = 3;
 
     // AlwaysOpen makes this exit always open -- all other values are ignored
-    // and passage through this exit is always valid.
+    // and passage through this exit is always valid. This is the default state
+    // for all new rooms.
     bool always_open = 4;
 
     // Target, if set, teleports the player to the target room UUID when
