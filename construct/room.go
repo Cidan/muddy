@@ -19,7 +19,8 @@ func NewRoom() *Room {
 		data: &roomv1.Room{
 			Uuid: uuid.NewV4().String(),
 		},
-		lock: sync.RWMutex{},
+		lock:    sync.RWMutex{},
+		players: make(map[string]atlas.Player),
 	}
 	return r
 }
@@ -38,12 +39,12 @@ func (r *Room) Coordinates() *roomv1.Room_Coordinates {
 
 func (r *Room) AddPlayer(p atlas.Player) {
 	r.lock.Lock()
-	defer r.lock.RUnlock()
+	defer r.lock.Unlock()
 	r.players[p.Uuid()] = p
 }
 
 func (r *Room) RemovePlayer(p atlas.Player) {
 	r.lock.Lock()
-	defer r.lock.RUnlock()
+	defer r.lock.Unlock()
 	delete(r.players, p.Uuid())
 }
