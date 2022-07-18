@@ -40,6 +40,11 @@ func (g *Game) DoSay(ctx context.Context, player atlas.Player, input ...string) 
 	return nil
 }
 
+func (g *Game) DoLook(ctx context.Context, player atlas.Player, input ...string) error {
+	player.Buffer("\n%s\n", player.Room().Name())
+	return player.Flush()
+}
+
 func init() {
 	log.Debug().Msg("registering game interp")
 	g := &Game{
@@ -48,6 +53,10 @@ func init() {
 	g.Register(&interp.Command{
 		Name: "say",
 		Fn:   g.DoSay,
+	})
+	g.Register(&interp.Command{
+		Name: "look",
+		Fn:   g.DoLook,
 	})
 	interp.Get().Set(playerv1.Player_INTERP_TYPE_PLAYING, g)
 }

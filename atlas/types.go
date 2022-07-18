@@ -7,6 +7,8 @@ import (
 
 type Player interface {
 	Uuid() string
+	Buffer(string, ...interface{})
+	Flush() error
 	Send(string, ...interface{}) error
 	SendToRoom(string, ...interface{})
 	LoginState() string
@@ -19,6 +21,8 @@ type Player interface {
 	CheckPassword(string) bool
 	Password() string
 	ToRoom(Room)
+	Room() Room
+	Do(string)
 }
 
 type Room interface {
@@ -26,4 +30,5 @@ type Room interface {
 	AddPlayer(Player)
 	RemovePlayer(Player)
 	Send(string, Player, ...interface{})
+	Name() string
 }

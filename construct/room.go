@@ -72,3 +72,15 @@ func (r *Room) Send(text string, except atlas.Player, args ...interface{}) {
 		p.Send(text, args...)
 	}
 }
+
+func (r *Room) SetName(text string) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	r.data.Name = text
+}
+
+func (r *Room) Name() string {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
+	return r.data.Name
+}

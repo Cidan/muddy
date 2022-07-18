@@ -39,6 +39,7 @@ func makeWorld() {
 		Y: 0,
 		Z: 0,
 	})
+	r1.SetName("The Alpha")
 
 	r2 := construct.NewRoom()
 	r2.SetCoordinates(&roomv1.Room_Coordinates{
@@ -46,6 +47,7 @@ func makeWorld() {
 		Y: 0,
 		Z: 0,
 	})
+	r2.SetName("The Omega")
 
 	atlas.Get().AddRoom(r1)
 	atlas.Get().AddRoom(r2)

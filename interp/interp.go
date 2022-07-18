@@ -36,6 +36,8 @@ func Get() *Handler {
 }
 
 func (h *Handler) Serve(ctx context.Context) error {
+	// TODO(lobato): potentially move this to a worker pool so
+	// that multiple commands can run concurrently.
 	log.Info().Msg("Starting Interpreter")
 	for {
 		select {

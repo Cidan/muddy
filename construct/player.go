@@ -118,6 +118,16 @@ func (p *Player) writeRaw(text string, args ...interface{}) {
 	}
 }
 
+// Do will execute the given command as if the player typed it. Note that
+// do executes asynchronously and does not block. You must not rely on Do
+// executing in order.
+func (p *Player) Do(input string) {
+	go interp.Get().Do(&interp.Input{
+		Player: p,
+		Text:   input,
+	})
+}
+
 func (p *Player) SendToRoom(text string, args ...interface{}) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
@@ -375,4 +385,10 @@ func (p *Player) ToRoom(r atlas.Room) {
 	p.lock.Unlock()
 
 	r.AddPlayer(p)
+}
+
+func (p *Player) Room() atlas.Room {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	return p.room
 }

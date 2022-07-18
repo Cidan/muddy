@@ -66,9 +66,10 @@ func (l *Login) ConfirmPassword(ctx context.Context, player atlas.Player, input 
 	player.Send("Password confirmed, welcome!")
 	player.SetLoginState("")
 	player.ToRoom(atlas.Get().Room(0, 0, 0))
-	player.SendToRoom("%s appears in front of you!", player.Name())
 	player.SetInterp(playerv1.Player_INTERP_TYPE_PLAYING)
-	log.Debug().Msg("user is in the game world.")
+	player.SendToRoom("%s appears in front of you!", player.Name())
+	player.Do("look")
+	log.Debug().Msg("user is in the game world")
 }
 
 func init() {
