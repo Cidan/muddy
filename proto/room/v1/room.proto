@@ -2,5 +2,18 @@ syntax = "proto3";
 package room.v1;
 
 message Room {
-  
+  string uuid = 1;
+
+  string name = 2;
+
+  string description = 3;
+
+  message Coordinates {
+    int32 x = 1;
+    int32 y = 2;
+    int32 z = 3;
+  }
+
+  Coordinates coordinates = 4;
+
 }
