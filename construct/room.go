@@ -6,6 +6,7 @@ import (
 	"github.com/Cidan/muddy/atlas"
 	roomv1 "github.com/Cidan/muddy/gen/proto/go/room/v1"
 	uuid "github.com/satori/go.uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 type Room struct {
@@ -47,4 +48,16 @@ func (r *Room) RemovePlayer(p atlas.Player) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	delete(r.players, p.Uuid())
+}
+
+func (r *Room) Save() error {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
+	data, err := proto.Marshal(r.data)
+	if err != nil {
+		return err
+	}
+	// TODO(lobato): save data
+	_ = data
+	return nil
 }

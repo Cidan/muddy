@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"os"
-	"time"
 
 	"github.com/Cidan/muddy/atlas"
 	_ "github.com/Cidan/muddy/commands"
@@ -25,7 +24,6 @@ func Start(ctx context.Context) {
 	// Probably because of init side effects in commands import
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	makeWorld()
-	time.Sleep(time.Second * 1)
 	go server.Get().Serve(ctx)
 	go interp.Get().Serve(ctx)
 	<-ctx.Done()
